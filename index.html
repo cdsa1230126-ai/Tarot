@@ -6,46 +6,21 @@
     <title>AIタロット占い - 星の導き</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
-
         body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; line-height: 1.6; margin: 0; padding-bottom: 50px; }
         h1 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); margin-top: 40px; }
-        
-        /* 設定エリア */
         .setup-area { max-width: 600px; margin: 20px auto; padding: 20px; background: #2a1f15; border: 1px solid #4a3b2a; border-radius: 8px; }
-        input[type="password"] { 
-            width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; 
-        }
+        input[type="password"] { width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; }
         .info-text { font-size: 0.8em; color: #a09070; margin-top: 5px; }
-
-        /* 操作エリア */
         .controls { margin: 20px; }
-        button { 
-            padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37;
-            border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px;
-            transition: 0.3s;
-        }
+        button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px; transition: 0.3s; }
         button:hover { background: #d4af37; color: #1a110a; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* ステージ（カード配置） */
         #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; min-height: 200px; }
-        .card-container { width: 140px; animation: fadeIn 1s ease-in; }
-        .card-img { 
-            width: 100%; border: 2px solid #d4af37; border-radius: 8px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.8); transition: transform 0.6s;
-        }
+        .card-container { width: 140px; }
+        .card-img { width: 100%; border: 2px solid #d4af37; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
         .reversed { transform: rotate(180deg); }
-        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 3px; }
-
-        /* 鑑定結果エリア */
-        #reading-area { 
-            max-width: 800px; margin: 30px auto; padding: 30px; 
-            background: #2a1f15; border: 2px double #d4af37; border-radius: 10px;
-            text-align: left; display: none; white-space: pre-wrap; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        }
+        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; }
+        #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; border-radius: 10px; text-align: left; display: none; white-space: pre-wrap; }
         .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite;}
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #d4af37; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 #d4af37; } }
     </style>
 </head>
@@ -54,15 +29,14 @@
     <h1>✨ AI Tarot Sanctuary ✨</h1>
 
     <div class="setup-area">
-        <p>占いを始める前に、あなたの「供物（Gemini API Key）」を捧げてください</p>
+        <p>Gemini API Keyを捧げてください</p>
         <input type="password" id="api-key" placeholder="AI API Key を入力...">
-        <p class="info-text">※キーはあなたのブラウザ内でのみ使用され、サーバーに保存されることはありません。</p>
     </div>
 
     <div class="controls">
-        <button onclick="spread('one')">ワンオラクル (1枚)</button>
-        <button onclick="spread('three')">スリーカード (3枚)</button>
-        <button onclick="spread('celtic')">ケルティッククロス (10枚)</button>
+        <button onclick="spread('one')">ワンオラクル</button>
+        <button onclick="spread('three')">スリーカード</button>
+        <button onclick="spread('celtic')">ケルティッククロス</button>
         <br><br>
         <button id="ai-btn" style="display:none; background: #d4af37; color: #1a110a;" onclick="getGeminiReading()">🔮 運命を解読する（AI鑑定）</button>
     </div>
@@ -73,11 +47,6 @@
     <script>
         let currentResult = [];
         const cardNames = ["0 愚者", "I 魔術師", "II 女教皇", "III 女帝", "IV 皇帝", "V 教皇", "VI 恋人", "VII 戦車", "VIII 力", "IX 隠者", "X 運命の輪", "XI 正義", "XII 吊るされた男", "XIII 死神", "XIV 節制", "XV 悪魔", "XVI 塔", "XVII 星", "XVIII 月", "XIX 太陽", "XX 審判", "XXI 世界"];
-        const spreads = {
-            one: { name: "ワンオラクル", labels: ["現在のメッセージ"] },
-            three: { name: "スリーカード", labels: ["過去", "現在", "未来"] },
-            celtic: { name: "ケルティッククロス", labels: ["現状", "影響(障害/援助)", "理想/目標", "潜在意識", "過去", "近未来", "あなたの立場", "環境", "期待と不安", "最終結果"] }
-        };
 
         function spread(type) {
             const stage = document.getElementById('stage');
@@ -88,76 +57,52 @@
             currentResult = [];
 
             let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
-            const config = spreads[type];
+            const labels = (type === 'one') ? ["現在"] : (type === 'three') ? ["過去", "現在", "未来"] : ["現状", "影響", "目標", "潜在", "過去", "近未来", "立場", "環境", "期待不安", "結果"];
 
-            config.labels.forEach((pos, i) => {
+            labels.forEach((pos, i) => {
                 const cardIdx = deck[i];
                 const isReversed = Math.random() > 0.5;
                 currentResult.push({ pos: pos, name: cardNames[cardIdx], status: isReversed ? "逆位置" : "正位置" });
 
                 const container = document.createElement('div');
                 container.className = 'card-container';
-                // 画像がフォルダに入っていない状態に合わせて src を修正
                 container.innerHTML = `
                     <img src="card_${cardIdx}.png" class="card-img ${isReversed ? 'reversed' : ''}">
                     <div class="label">${pos}<br>${cardNames[cardIdx]} (${isReversed ? '逆' : '正'})</div>
                 `;
                 stage.appendChild(container);
             });
-
             aiBtn.style.display = 'inline-block';
-            aiBtn.dataset.currentSpread = config.name;
         }
 
         async function getGeminiReading() {
             const apiKey = document.getElementById('api-key').value;
             const readingArea = document.getElementById('reading-area');
-            if (!apiKey) {
-                alert("APIキーを入力してください。");
-                return;
-            }
+            if (!apiKey) return alert("APIキーを入力してください。");
 
             readingArea.style.display = 'block';
             readingArea.innerHTML = '<p class="loading-dots">星の配置を読み解いています</p>';
 
-            const spreadName = document.getElementById('ai-btn').dataset.currentSpread;
             const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
-            
-            const prompt = `あなたは神秘的なタロット占い師です。以下の展開結果に基づき、相談者へ物語を統合して前向きなアドバイスを伝えてください。
-            
-【スプレッド】: ${spreadName}
-【展開されたカード】:
-${cardsStr}`;
+            const prompt = `あなたは神秘的なタロット占い師です。以下の結果を統合して、心に響く鑑定を行ってください。\n\n${cardsStr}`;
 
-            // 最新の Gemini 1.5 Flash 呼び出しURLに修正
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            // ★ここを Gemini 3 Flash Preview に合わせて修正しました
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
-                    })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
 
                 const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
-                
-                if (!data.candidates || !data.candidates[0].content) {
-                    throw new Error("AIからの応答が空でした。");
-                }
+                if (data.error) throw new Error(data.error.message);
                 
                 const text = data.candidates[0].content.parts[0].text;
-                readingArea.innerHTML = `<h2 style="color:#d4af37; border-bottom:1px solid #d4af37;">🔮 霊感による鑑定結果</h2>${text}`;
+                readingArea.innerHTML = `<h2>🔮 鑑定結果</h2>${text}`;
             } catch (err) {
-                console.error(err);
-                readingArea.innerHTML = `<p style="color:#ff6b6b;">鑑定に失敗しました。<br>エラー詳細: ${err.message}</p>`;
+                readingArea.innerHTML = `<p style="color:#ff6b6b;">鑑定失敗：${err.message}</p>`;
             }
         }
     </script>
