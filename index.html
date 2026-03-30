@@ -84,9 +84,8 @@
             const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
             const prompt = `あなたは神秘的なタロット占い師です。以下の結果を統合して、心に響く鑑定を行ってください。\n\n${cardsStr}`;
 
-            // あなたの画面で確認できた最新のモデル名を指定します
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-
+           // 【重要】ここを現在の最新エイリアスに書き換え
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
             try {
                 const response = await fetch(url, {
                     method: 'POST',
