@@ -2,22 +2,21 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIタロット占い - 星の導き</title>
+    <title>AI Tarot Sanctuary - 修正完了版</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
-        body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; line-height: 1.6; margin: 0; padding-bottom: 50px; }
-        h1 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); margin-top: 40px; }
+        body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; margin: 0; padding-bottom: 50px; }
+        h1 { color: #d4af37; margin-top: 40px; }
         .setup-area { max-width: 600px; margin: 20px auto; padding: 20px; background: #2a1f15; border: 1px solid #4a3b2a; border-radius: 8px; }
         input[type="password"] { width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; }
         .controls { margin: 20px; }
-        button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px; }
-        #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; min-height: 200px; }
+        button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; margin: 5px; font-weight: bold; }
+        #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
         .card-container { width: 140px; }
         .card-img { width: 100%; border: 2px solid #d4af37; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
         .reversed { transform: rotate(180deg); }
         .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; }
-        #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; border-radius: 10px; text-align: left; display: none; white-space: pre-wrap; }
+        #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; text-align: left; display: none; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -39,28 +38,24 @@
     <script>
         let currentResult = [];
         const cardNames = ["0 愚者", "I 魔術師", "II 女教皇", "III 女帝", "IV 皇帝", "V 教皇", "VI 恋人", "VII 戦車", "VIII 力", "IX 隠者", "X 運命の輪", "XI 正義", "XII 吊るされた男", "XIII 死神", "XIV 節制", "XV 悪魔", "XVI 塔", "XVII 星", "XVIII 月", "XIX 太陽", "XX 審判", "XXI 世界"];
-        const spreads = {
-            one: { name: "ワンオラクル", labels: ["現在のメッセージ"] },
-            three: { name: "スリーカード", labels: ["過去", "現在", "未来"] },
-            celtic: { name: "ケルティッククロス", labels: ["現状", "影響", "目標", "潜在意識", "過去", "近未来", "立場", "環境", "期待/不安", "最終結果"] }
-        };
 
         function spread(type) {
             const stage = document.getElementById('stage');
             stage.innerHTML = ''; 
             document.getElementById('reading-area').style.display = 'none';
             currentResult = [];
-            let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
-            const config = spreads[type];
+            const labels = (type === 'one') ? ["現在"] : (type === 'three') ? ["過去", "現在", "未来"] : ["現状", "影響", "目標", "潜在", "過去", "近未来", "立場", "環境", "期待不安", "結果"];
 
-            config.labels.forEach((pos, i) => {
+            let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
+
+            labels.forEach((pos, i) => {
                 const cardIdx = deck[i];
                 const isReversed = Math.random() > 0.5;
                 currentResult.push({ pos: pos, name: cardNames[cardIdx], status: isReversed ? "逆位置" : "正位置" });
 
                 const container = document.createElement('div');
                 container.className = 'card-container';
-                // ★修正ポイント：画像のパスから「Tarot/」を削除しました
+                // 画像パスを直接指定（Tarot/を削除）
                 container.innerHTML = `
                     <img src="card_${cardIdx}.png" class="card-img ${isReversed ? 'reversed' : ''}">
                     <div class="label">${pos}<br>${cardNames[cardIdx]} (${isReversed ? '逆' : '正'})</div>
@@ -68,7 +63,6 @@
                 stage.appendChild(container);
             });
             document.getElementById('ai-btn').style.display = 'inline-block';
-            document.getElementById('ai-btn').dataset.currentSpread = config.name;
         }
 
         async function getGeminiReading() {
@@ -79,17 +73,14 @@
             readingArea.style.display = 'block';
             readingArea.innerHTML = '星の配置を読み解いています...';
 
-            const spreadName = document.getElementById('ai-btn').dataset.currentSpread;
             const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
-            
-            // ★修正ポイント：APIのモデル名を最新版に、URLを安定版に修正しました
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: `あなたは神秘的なタロット占い師です。以下の結果に基づき、物語を統合してアドバイスをください。\n\n【スプレッド】: ${spreadName}\n${cardsStr}` }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: `あなたは神秘的なタロット占い師です。以下の結果からアドバイスをください。\n\n${cardsStr}` }] }] })
                 });
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message);
