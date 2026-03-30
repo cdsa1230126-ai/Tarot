@@ -3,148 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIタロット占い - 星の導き</title>
+    <title>タロット占い</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
-
-        body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; line-height: 1.6; margin: 0; padding-bottom: 50px; }
-        h1 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); margin-top: 40px; }
-        
-        /* 設定エリア */
-        .setup-area { max-width: 600px; margin: 20px auto; padding: 20px; background: #2a1f15; border: 1px solid #4a3b2a; border-radius: 8px; }
-        input[type="password"] { 
-            width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; 
-        }
-        .info-text { font-size: 0.8em; color: #a09070; margin-top: 5px; }
-
-        /* 操作エリア */
+        body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; margin: 0; padding-bottom: 50px; }
+        h1 { color: #d4af37; margin-top: 40px; }
         .controls { margin: 20px; }
         button { 
             padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37;
             border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px;
-            transition: 0.3s;
         }
-        button:hover { background: #d4af37; color: #1a110a; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* ステージ（カード配置） */
-        #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; min-height: 200px; }
-        .card-container { width: 140px; animation: fadeIn 1s ease-in; }
-        .card-img { 
-            width: 100%; border: 2px solid #d4af37; border-radius: 8px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.8); transition: transform 0.6s;
-        }
+        #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; padding: 20px; }
+        .card-container { width: 130px; background: #2a1f15; padding: 10px; border: 1px solid #d4af37; border-radius: 8px; }
+        .card-emoji { font-size: 3rem; display: block; transition: 0.3s; margin-bottom: 10px; }
         .reversed { transform: rotate(180deg); }
-        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 3px; }
-
-        /* 鑑定結果エリア */
-        #reading-area { 
-            max-width: 800px; margin: 30px auto; padding: 30px; 
-            background: #2a1f15; border: 2px double #d4af37; border-radius: 10px;
-            text-align: left; display: none; white-space: pre-wrap; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        }
-        .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite;}
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #d4af37; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 #d4af37; } }
+        .label { font-size: 0.8em; color: #d4af37; font-weight: bold; }
+        .meaning { font-size: 0.75em; color: #fff; margin-top: 5px; border-top: 1px solid #4a3b2a; padding-top: 5px; }
     </style>
 </head>
 <body>
 
-    <h1>✨ AI Tarot Sanctuary ✨</h1>
-
-    <div class="setup-area">
-        <p>占いを始める前に、あなたの「供物（Gemini API Key）」を捧げてください</p>
-        <input type="password" id="api-key" placeholder="AI API Key を入力...">
-        <p class="info-text">※キーはあなたのブラウザ内でのみ使用され、サーバーに保存されることはありません。</p>
-    </div>
+    <h1>✨ Tarot Sanctuary ✨</h1>
 
     <div class="controls">
-        <button onclick="spread('one')">ワンオラクル (1枚)</button>
-        <button onclick="spread('three')">スリーカード (3枚)</button>
-        <button onclick="spread('celtic')">ケルティッククロス (10枚)</button>
-        <br><br>
-        <button id="ai-btn" style="display:none; background: #d4af37; color: #1a110a;" onclick="getGeminiReading()">🔮 運命を解読する（AI鑑定）</button>
+        <button onclick="spread('one')">ワンオラクル</button>
+        <button onclick="spread('three')">スリーカード</button>
+        <button onclick="spread('celtic')">ケルティッククロス</button>
     </div>
 
     <div id="stage"></div>
-    <div id="reading-area"></div>
 
     <script>
-        let currentResult = [];
-        const cardNames = ["0 愚者", "I 魔術師", "II 女教皇", "III 女帝", "IV 皇帝", "V 教皇", "VI 恋人", "VII 戦車", "VIII 力", "IX 隠者", "X 運命の輪", "XI 正義", "XII 吊るされた男", "XIII 死神", "XIV 節制", "XV 悪魔", "XVI 塔", "XVII 星", "XVIII 月", "XIX 太陽", "XX 審判", "XXI 世界"];
+        // script.jsのデータを統合
+        const tarotDeck = [
+            { name: "0 愚者", upright: "自由・冒険・可能性", reverse: "無計画・無責任" },
+            { name: "I 魔術師", upright: "創造・才能・スタート", reverse: "スランプ・技術不足" },
+            { name: "II 女教皇", upright: "直感・知性・神秘", reverse: "わがまま・神経質" },
+            { name: "III 女帝", upright: "豊かさ・愛情・母性", reverse: "挫折・浪費・感情的" },
+            { name: "IV 皇帝", upright: "責任・安定・実行力", reverse: "独断・傲慢・無責任" },
+            { name: "V 教皇", upright: "伝統・慈悲・導き", reverse: "束縛・不信感・頑固" },
+            { name: "VI 恋人", upright: "選択・調和・ときめき", reverse: "不調和・優柔不断" },
+            { name: "VII 戦車", upright: "勝利・前進・強い意志", reverse: "暴走・挫折・好戦的" },
+            { name: "VIII 力", upright: "勇気・忍耐・精神力", reverse: "自信過剰・無気力" },
+            { name: "IX 隠者", upright: "内省・探求・悟り", reverse: "閉鎖的・孤独・不注意" },
+            { name: "X 運命の輪", upright: "チャンス・転換点", reverse: "不運・タイミングの悪さ" },
+            { name: "XI 正義", upright: "公平・決断・バランス", reverse: "不公平・偏見・不正" },
+            { name: "XII 吊るされた男", upright: "修行・視点の転換", reverse: "無駄な苦労・自己犠牲" },
+            { name: "XIII 死神", upright: "終焉・再出発・変化", reverse: "未練・停滞・執着" },
+            { name: "XIV 節制", upright: "節度・調和・癒やし", reverse: "不摂生・不調和・消耗" },
+            { name: "XV 悪魔", upright: "執着・誘惑・束縛", reverse: "解放・覚醒" },
+            { name: "XVI 塔", upright: "崩壊・衝撃・突然の変化", reverse: "緊迫状態・不安" },
+            { name: "XVII 星", upright: "希望・願い", reverse: "失望・高望み・悲観的" },
+            { name: "XVIII 月", upright: "不安・迷い・潜在意識", reverse: "不安解消・現実逃避" },
+            { name: "XIX 太陽", upright: "成功・祝福・明るい未来", reverse: "中断・衰退・元気不足" },
+            { name: "XX 審判", upright: "復活・覚醒・結果が出る", reverse: "再起不能・悔恨" },
+            { name: "XXI 世界", upright: "完成・完全・ハッピーエンド", reverse: "未完成・限界・スランプ" }
+        ];
+
         const spreads = {
-            one: { name: "ワンオラクル", labels: ["現在のメッセージ"] },
-            three: { name: "スリーカード", labels: ["過去", "現在", "未来"] },
-            celtic: { name: "ケルティッククロス", labels: ["現状", "影響(障害/援助)", "理想/目標", "潜在意識", "過去", "近未来", "あなたの立場", "環境", "期待と不安", "最終結果"] }
+            one: { labels: ["現在"] },
+            three: { labels: ["過去", "現在", "未来"] },
+            celtic: { labels: ["現状", "影響", "目標", "潜在意識", "過去", "近未来", "立場", "環境", "期待/不安", "最終結果"] }
         };
 
         function spread(type) {
             const stage = document.getElementById('stage');
-            const readingArea = document.getElementById('reading-area');
-            const aiBtn = document.getElementById('ai-btn');
             stage.innerHTML = ''; 
-            readingArea.style.display = 'none';
-            currentResult = [];
-
+            
             let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
             const config = spreads[type];
 
             config.labels.forEach((pos, i) => {
                 const cardIdx = deck[i];
+                const card = tarotDeck[cardIdx];
                 const isReversed = Math.random() > 0.5;
-                currentResult.push({ pos: pos, name: cardNames[cardIdx], status: isReversed ? "逆位置" : "正位置" });
+                const meaning = isReversed ? card.reverse : card.upright;
 
                 const container = document.createElement('div');
                 container.className = 'card-container';
                 container.innerHTML = `
-                    <img src="Tarot/card_${cardIdx}.png" class="card-img ${isReversed ? 'reversed' : ''}">
-                    <div class="label">${pos}<br>${cardNames[cardIdx]} (${isReversed ? '逆' : '正'})</div>
+                    <div class="label">${pos}</div>
+                    <span class="card-emoji ${isReversed ? 'reversed' : ''}">🃏</span>
+                    <div class="label">${card.name}<br>(${isReversed ? '逆' : '正'})</div>
+                    <div class="meaning">${meaning}</div>
                 `;
                 stage.appendChild(container);
             });
-
-            aiBtn.style.display = 'inline-block';
-            aiBtn.dataset.currentSpread = config.name;
-        }
-
-        async function getGeminiReading() {
-            const apiKey = document.getElementById('api-key').value;
-            const readingArea = document.getElementById('reading-area');
-            if (!apiKey) {
-                alert("APIキーを入力してください。キーは Google AI Studio から無料で取得できます。");
-                return;
-            }
-
-            readingArea.style.display = 'block';
-            readingArea.innerHTML = '<p class="loading-dots">星の配置を読み解いています</p>';
-
-            const spreadName = document.getElementById('ai-btn').dataset.currentSpread;
-            const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
-            
-            const prompt = `あなたは神秘的なタロット占い師です。以下の展開結果に基づき、相談者へ心に響くアドバイスを伝えてください。
-            
-【スプレッド】: ${spreadName}
-【展開されたカード】:
-${cardsStr}
-
-それぞれのカードが示す意味と、それらが織りなす物語を統合して、最後には前向きな行動指針を提示してください。`;
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                
-                const text = data.candidates[0].content.parts[0].text;
-                readingArea.innerHTML = `<h2 style="color:#d4af37; border-bottom:1px solid #d4af37;">🔮 霊感による鑑定結果</h2>${text}`;
-            } catch (err) {
-                readingArea.innerHTML = `<p style="color:#ff6b6b;">鑑定に失敗しました。APIキーが正しいか確認してください。<br>エラー: ${err.message}</p>`;
-            }
         }
     </script>
 </body>
