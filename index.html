@@ -10,7 +10,6 @@
         h1 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); margin-top: 40px; }
         .setup-area { max-width: 600px; margin: 20px auto; padding: 20px; background: #2a1f15; border: 1px solid #4a3b2a; border-radius: 8px; }
         input[type="password"] { width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; }
-        .info-text { font-size: 0.8em; color: #a09070; margin-top: 5px; }
         .controls { margin: 20px; }
         button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px; transition: 0.3s; }
         button:hover { background: #d4af37; color: #1a110a; }
@@ -66,6 +65,7 @@
 
                 const container = document.createElement('div');
                 container.className = 'card-container';
+                // 画像がフォルダに入っていない状態に合わせて修正
                 container.innerHTML = `
                     <img src="card_${cardIdx}.png" class="card-img ${isReversed ? 'reversed' : ''}">
                     <div class="label">${pos}<br>${cardNames[cardIdx]} (${isReversed ? '逆' : '正'})</div>
@@ -86,7 +86,7 @@
             const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
             const prompt = `あなたは神秘的なタロット占い師です。以下の結果を統合して、心に響く鑑定を行ってください。\n\n${cardsStr}`;
 
-            // ★ここを Gemini 3 Flash Preview に合わせて修正しました
+            // URLのモデル指定を「gemini-3-flash-preview」に変更しました
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             try {
