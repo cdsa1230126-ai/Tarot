@@ -10,26 +10,29 @@
         body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; line-height: 1.6; margin: 0; padding-bottom: 50px; }
         h1 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); margin-top: 40px; }
         .setup-area { max-width: 600px; margin: 20px auto; padding: 20px; background: #2a1f15; border: 1px solid #4a3b2a; border-radius: 8px; }
-        input[type="password"] { width: 70%; padding: 10px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; }
+        input[type="password"] { width: 80%; padding: 12px; background: #1a110a; border: 1px solid #d4af37; color: #fff; border-radius: 4px; font-size: 16px; }
         .controls { margin: 20px; }
-        button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px; transition: 0.3s; }
+        button { padding: 12px 24px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 8px; transition: 0.3s; font-family: 'Sawarabi Mincho', serif; }
         button:hover { background: #d4af37; color: #1a110a; }
 
         /* カード配置エリア（ここをキャプチャします） */
         #stage { 
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; 
-            padding: 30px; min-height: 250px; 
-            border: 2px dashed #4a3b2a; /* わかりやすく枠線を表示 */
-            margin: 20px;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; 
+            padding: 25px; min-height: 250px; 
+            border: 2px dashed #4a3b2a; 
+            margin: 20px auto;
+            max-width: 1000px;
+            background: #1a110a;
         }
-        .card-container { width: 140px; text-align: center; }
-        .card-img { width: 100%; border: 2px solid #d4af37; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+        .card-container { width: 120px; text-align: center; }
+        .card-img { width: 100%; border: 1px solid #d4af37; border-radius: 6px; box-shadow: 0 5px 15px rgba(0,0,0,0.7); }
         .reversed { transform: rotate(180deg); }
-        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; white-space: nowrap; }
+        .label { margin-top: 8px; font-size: 0.75em; color: #d4af37; font-weight: bold; }
 
-        #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; border-radius: 10px; text-align: left; display: none; white-space: pre-wrap; }
+        #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; border-radius: 10px; text-align: left; display: none; white-space: pre-wrap; color: #f0e6d2; }
         .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite;}
         @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #d4af37; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 #d4af37; } }
+        .error-msg { color: #ff6b6b; font-size: 0.9em; margin-top: 10px; border: 1px solid #ff6b6b; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -38,7 +41,7 @@
 
     <div class="setup-area">
         <p>Gemini API Keyを入力してください</p>
-        <input type="password" id="api-key" placeholder="AI API Key...">
+        <input type="password" id="api-key" placeholder="ここにAPIキーを貼り付け">
     </div>
 
     <div class="controls">
@@ -61,14 +64,12 @@
             readingArea.style.display = 'none';
             currentResult = [];
 
-            // ケルティッククロスの10枚
             let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
             const labels = ["現状", "影響", "目標", "潜在", "過去", "近未来", "立場", "環境", "期待不安", "結果"];
 
             labels.forEach((pos, i) => {
                 const cardIdx = deck[i];
                 const isReversed = Math.random() > 0.5;
-                // テキスト情報も一応保持
                 currentResult.push({ pos: pos, name: cardNames[cardIdx], status: isReversed ? "逆位置" : "正位置" });
 
                 const container = document.createElement('div');
@@ -82,47 +83,37 @@
             document.getElementById('ai-btn').style.display = 'inline-block';
         }
 
-        // 【大幅変更】画像を送る鑑定関数
         async function getGeminiVisualReading() {
             const apiKey = document.getElementById('api-key').value;
-            const stage = document.getElementById('stage'); // キャプチャ対象
+            const stage = document.getElementById('stage');
             const readingArea = document.getElementById('reading-area');
             
             if (!apiKey) return alert("APIキーを入力してください。");
             
             readingArea.style.display = 'block';
-            readingArea.innerHTML = '<p class="loading-dots">展開されたカードの絵柄を読み解いています</p>';
+            readingArea.innerHTML = '<p class="loading-dots">星の導きと画像を照合しています（軽量化処理中）</p>';
 
             try {
-                // 【ステップ1】カードエリア（stage）を画像化する
+                // 【軽量化】scaleを0.5にして、送信データ量を減らし 429エラーを回避しやすくします
                 const canvas = await html2canvas(stage, {
-                    backgroundColor: "#1a110a", // 背景色を指定してきれいに切り取る
-                    scale: 1 // 等倍でキャプチャ
+                    backgroundColor: "#1a110a",
+                    scale: 0.5 
                 });
                 
-                // CanvasをBase64データに変換（APIに送る形式）
-                const dataUrl = canvas.toDataURL('image/png');
-                const base64Data = dataUrl.split(',')[1]; // ヘッダーを取り除く
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7); // JPEG圧縮でさらに軽量化
+                const base64Data = dataUrl.split(',')[1];
 
-                // あなたの環境にある「gemini-flash-latest」を使用
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
 
-                // 【ステップ2】テキスト＋画像のマルチモーダルなリクエストを作成
                 const requestBody = {
                     contents: [{
                         parts: [
-                            { text: "あなたは神秘的なタロット占い師です。添付された画像には、ケルティッククロス展開法で10枚のタロットカードが並んでいます。画像全体のカード配置、正位置・逆位置、そしてそれぞれのカードの絵柄から感じるインスピレーションを統合し、相談者の心に響く詳細な鑑定を行ってください。カード名だけでなく、絵柄の印象も交えて伝えてください。" },
-                            {
-                                inline_data: {
-                                    mime_type: "image/png",
-                                    data: base64Data
-                                }
-                            }
+                            { text: "あなたは神秘的なタロット占い師です。画像に展開された10枚のカード（ケルティッククロス）を見て、その配置と絵柄からインスピレーションを受け、相談者の運命を深く鑑定してください。日本語で、優しく、かつ鋭く読み解いてください。" },
+                            { inline_data: { mime_type: "image/jpeg", data: base64Data } }
                         ]
                     }]
                 };
 
-                // 【ステップ3】AIサーバーへ送信
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -130,16 +121,21 @@
                 });
 
                 const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
+                
+                if (!response.ok) {
+                    if (response.status === 429) {
+                        throw new Error("【利用制限中】Google側の無料枠上限に達しました。15分ほど時間を空けてから再度お試しください。");
+                    }
+                    throw new Error(data.error ? data.error.message : "通信エラーが発生しました。");
+                }
                 
                 const text = data.candidates[0].content.parts[0].text;
-                readingArea.innerHTML = `<h2>🔮 鑑定結果（ビジュアル鑑定）</h2>${text}`;
+                readingArea.innerHTML = `<h2>🔮 運命の鑑定結果</h2>${text}`;
 
             } catch (err) {
                 console.error("Visual API Error:", err.message);
                 
-                // エラー時のバックアップ（テキスト情報から簡易鑑定）
-                let fallback = `<h3>🌙 簡易鑑定（バックアップ）</h3><p style="color:#d4af37; font-size:0.8em;">画像からの鑑定が混み合っています。少し待ってから再度お試しください。</p><hr>`;
+                let fallback = `<h3>🌙 簡易鑑定（バックアップ）</h3><div class="error-msg">${err.message}</div><hr>`;
                 currentResult.forEach(c => {
                     fallback += `<p><strong>${c.pos}</strong>: ${c.name} (${c.status})</p>`;
                 });
