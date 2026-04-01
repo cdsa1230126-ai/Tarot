@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIタロット占い - 星の導き</title>
+    <title>AIタロット占い - ケルティッククロス・ビジュアル鑑定</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
         body { background: #1a110a; color: #e0d5c0; font-family: 'Sawarabi Mincho', serif; text-align: center; line-height: 1.6; margin: 0; padding-bottom: 50px; }
@@ -13,11 +14,19 @@
         .controls { margin: 20px; }
         button { padding: 12px 20px; cursor: pointer; background: #4a3b2a; color: #d4af37; border: 1px solid #d4af37; border-radius: 5px; font-weight: bold; margin: 5px; transition: 0.3s; }
         button:hover { background: #d4af37; color: #1a110a; }
-        #stage { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; min-height: 200px; }
-        .card-container { width: 140px; }
+
+        /* カード配置エリア（ここをキャプチャします） */
+        #stage { 
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; 
+            padding: 30px; min-height: 250px; 
+            border: 2px dashed #4a3b2a; /* わかりやすく枠線を表示 */
+            margin: 20px;
+        }
+        .card-container { width: 140px; text-align: center; }
         .card-img { width: 100%; border: 2px solid #d4af37; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
         .reversed { transform: rotate(180deg); }
-        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; }
+        .label { margin-top: 10px; font-size: 0.85em; color: #d4af37; font-weight: bold; white-space: nowrap; }
+
         #reading-area { max-width: 800px; margin: 30px auto; padding: 30px; background: #2a1f15; border: 2px double #d4af37; border-radius: 10px; text-align: left; display: none; white-space: pre-wrap; }
         .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite;}
         @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: #d4af37; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 #d4af37, .5em 0 0 #d4af37; } }
@@ -33,11 +42,9 @@
     </div>
 
     <div class="controls">
-        <button onclick="spread('one')">ワンオラクル</button>
-        <button onclick="spread('three')">スリーカード</button>
-        <button onclick="spread('celtic')">ケルティッククロス</button>
+        <button onclick="spread('celtic')">ケルティッククロス展開</button>
         <br><br>
-        <button id="ai-btn" style="display:none; background: #d4af37; color: #1a110a;" onclick="getGeminiReading()">🔮 運命を解読する（AI鑑定）</button>
+        <button id="ai-btn" style="display:none; background: #d4af37; color: #1a110a;" onclick="getGeminiVisualReading()">🔮 運命を解読する（ビジュアル鑑定）</button>
     </div>
 
     <div id="stage"></div>
@@ -54,12 +61,14 @@
             readingArea.style.display = 'none';
             currentResult = [];
 
+            // ケルティッククロスの10枚
             let deck = Array.from({length: 22}, (_, i) => i).sort(() => Math.random() - 0.5);
-            const labels = (type === 'one') ? ["現在"] : (type === 'three') ? ["過去", "現在", "未来"] : ["現状", "影響", "目標", "潜在", "過去", "近未来", "立場", "環境", "期待不安", "結果"];
+            const labels = ["現状", "影響", "目標", "潜在", "過去", "近未来", "立場", "環境", "期待不安", "結果"];
 
             labels.forEach((pos, i) => {
                 const cardIdx = deck[i];
                 const isReversed = Math.random() > 0.5;
+                // テキスト情報も一応保持
                 currentResult.push({ pos: pos, name: cardNames[cardIdx], status: isReversed ? "逆位置" : "正位置" });
 
                 const container = document.createElement('div');
@@ -73,39 +82,68 @@
             document.getElementById('ai-btn').style.display = 'inline-block';
         }
 
-        async function getGeminiReading() {
+        // 【大幅変更】画像を送る鑑定関数
+        async function getGeminiVisualReading() {
             const apiKey = document.getElementById('api-key').value;
+            const stage = document.getElementById('stage'); // キャプチャ対象
             const readingArea = document.getElementById('reading-area');
+            
             if (!apiKey) return alert("APIキーを入力してください。");
-
+            
             readingArea.style.display = 'block';
-            readingArea.innerHTML = '<p class="loading-dots">星の配置を読み解いています</p>';
+            readingArea.innerHTML = '<p class="loading-dots">展開されたカードの絵柄を読み解いています</p>';
 
-            const cardsStr = currentResult.map(c => `・${c.pos}: ${c.name} (${c.status})`).join('\n');
-            const prompt = `あなたは神秘的なタロット占い師です。以下の結果を統合して、心に響く鑑定を行ってください。\n\n${cardsStr}`;
-
-           // 【重要】ここを現在の最新エイリアスに書き換え
-const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
             try {
+                // 【ステップ1】カードエリア（stage）を画像化する
+                const canvas = await html2canvas(stage, {
+                    backgroundColor: "#1a110a", // 背景色を指定してきれいに切り取る
+                    scale: 1 // 等倍でキャプチャ
+                });
+                
+                // CanvasをBase64データに変換（APIに送る形式）
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64Data = dataUrl.split(',')[1]; // ヘッダーを取り除く
+
+                // あなたの環境にある「gemini-flash-latest」を使用
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+
+                // 【ステップ2】テキスト＋画像のマルチモーダルなリクエストを作成
+                const requestBody = {
+                    contents: [{
+                        parts: [
+                            { text: "あなたは神秘的なタロット占い師です。添付された画像には、ケルティッククロス展開法で10枚のタロットカードが並んでいます。画像全体のカード配置、正位置・逆位置、そしてそれぞれのカードの絵柄から感じるインスピレーションを統合し、相談者の心に響く詳細な鑑定を行ってください。カード名だけでなく、絵柄の印象も交えて伝えてください。" },
+                            {
+                                inline_data: {
+                                    mime_type: "image/png",
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }]
+                };
+
+                // 【ステップ3】AIサーバーへ送信
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    body: JSON.stringify(requestBody)
                 });
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error.message);
                 
                 const text = data.candidates[0].content.parts[0].text;
-                readingArea.innerHTML = `<h2>🔮 鑑定結果</h2>${text}`;
+                readingArea.innerHTML = `<h2>🔮 鑑定結果（ビジュアル鑑定）</h2>${text}`;
+
             } catch (err) {
-                // AIが利用制限等で動かない場合のバックアップ表示
-                let fallback = `<h3>🌙 簡易鑑定（バックアップ）</h3><p style="color:#d4af37; font-size:0.8em;">天の導き（AI）が混み合っています。少し待ってから再度お試しください。</p><hr>`;
+                console.error("Visual API Error:", err.message);
+                
+                // エラー時のバックアップ（テキスト情報から簡易鑑定）
+                let fallback = `<h3>🌙 簡易鑑定（バックアップ）</h3><p style="color:#d4af37; font-size:0.8em;">画像からの鑑定が混み合っています。少し待ってから再度お試しください。</p><hr>`;
                 currentResult.forEach(c => {
                     fallback += `<p><strong>${c.pos}</strong>: ${c.name} (${c.status})</p>`;
                 });
                 readingArea.innerHTML = fallback;
-                console.error("API Error:", err.message);
             }
         }
     </script>
